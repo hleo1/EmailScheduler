@@ -18,15 +18,22 @@ from googleapiclient.errors import HttpError
 from datetime import datetime
 import time
 from dotenv import load_dotenv
+import smtplib
+load_dotenv()
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 # Email credentials and server settings
 EMAIL =  os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
+ERROR_REPORTING_EMAIL = os.getenv("ERROR_REPORTING_EMAIL")
 openai.api_key =  os.getenv("OPENAI_API_KEY")
+
 IMAP_SERVER = "imap.gmail.com"
 IMAP_PORT = 993
+
+error_list = []
+time_since_last_send = 0
 
 def create_calendar_event(start_time, end_time, description, location):
     #credentials.json taken from developer api
@@ -71,6 +78,7 @@ def create_calendar_event(start_time, end_time, description, location):
 
     except HttpError as error:
         print('An error occurred: %s' % error)
+        error_list.append('An error occurred: %s' % error)
 
 def delete_all_calendar_events():
     creds = None
@@ -101,6 +109,32 @@ def delete_all_calendar_events():
     except HttpError as error:
         print('An error occurred: %s' % error)
 
+
+
+
+def send_error_list(error_list):
+
+    if not error_list:
+        return  # No errors to send
+    # Your email and password
+    sender_email = EMAIL
+    sender_password = PASSWORD
+
+    # Recipient's email
+    recipient_email = "leo.hubert3@gmail.com"
+
+    # Email subject and body
+    subject = "Error in Script"
+    body = "\n".join(error_list)
+
+    # Create the email message
+    message = f"Subject: {subject}\n\n{body}"
+
+    # Connect to the SMTP server and send the email
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, recipient_email, message)
+
 # Connect to the IMAP server
 context = ssl.create_default_context()
 context.check_hostname = False
@@ -111,6 +145,7 @@ mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
 mail.login(EMAIL, PASSWORD)
 
 # delete_all_calendar_events()
+
 
 try:
     while True:
@@ -184,9 +219,17 @@ try:
                 #delete email here
         except Exception as e:
             print("Error:", e)
+            error_list.append("Error:" + str(e))
 
-        # Wait for 60 seconds before checking again
-        time.sleep(30)  # Wait for 60 seconds before checking again
+
+        if len(error_list) > 0 and time_since_last_send >= 12 * 3600:
+            send_error_list(error_list)
+            error_list.clear()  # Clear the error list after sending
+            time_since_last_send = 0  # Reset the timer
+
+        # Wait for 30 seconds before checking again
+        time.sleep(30)
+        time_since_last_send += 30
 
 finally:
     # Disconnect from the server
