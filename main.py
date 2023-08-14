@@ -151,7 +151,7 @@ try:
     while True:
         try:
             mail.select("Inbox")  # You can select other folders too
-            print("checking email")
+            # print("checking email")
             now = datetime.now()
             search_date = now.strftime("%d-%b-%Y")
             # Search for emails today
@@ -221,6 +221,8 @@ try:
             print("Error:", e)
             error_list.append("Error:" + str(e))
 
+        if time_since_last_send >= 12 * 3600:
+            print(datetime.now())
 
         if len(error_list) > 0 and time_since_last_send >= 12 * 3600:
             send_error_list(error_list)
