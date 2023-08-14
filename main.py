@@ -25,11 +25,8 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 EMAIL =  os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
 openai.api_key =  os.getenv("OPENAI_API_KEY")
-
 IMAP_SERVER = "imap.gmail.com"
 IMAP_PORT = 993
-openai.api_key = "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"
-
 
 def create_calendar_event(start_time, end_time, description, location):
     #credentials.json taken from developer api
